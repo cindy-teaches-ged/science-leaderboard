@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Science Class Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1923;
+    --card: #1a2535;
+    --card2: #1e2d42;
+    --accent: #f0c040;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --pink: #f472b6;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8f0fe;
+    --muted: #6b7a99;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(96,165,250,0.06) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, rgba(244,114,182,0.06) 0%, transparent 60%);
+  }
+
+  header { text-align: center; margin-bottom: 24px; }
+
+  header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-shadow: 0 0 30px rgba(240,192,64,0.3);
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .save-indicator {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .save-indicator.visible { opacity: 1; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .legend-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .board-wrap {
+    background: var(--card);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+
+  .board-header {
+    display: grid;
+    padding: 12px 16px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    align-items: center;
+    gap: 4px;
+  }
+
+  .board-header .col-emoji { text-align: center; font-size: 1rem; }
+
+  .student-row {
+    display: grid;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s;
+  }
+
+  .student-row:last-child { border-bottom: none; }
+  .student-row:hover { background: rgba(255,255,255,0.03); }
+
+  .rank {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .rank.r1 { color: var(--accent); }
+  .rank.r2 { color: #c0c8d8; }
+  .rank.r3 { color: #cd7c3a; }
+
+  .student-name { font-weight: 800; font-size: 0.95rem; color: var(--text); }
+
+  .check-cell { text-align: center; }
+
+  .check-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    transition: all 0.15s;
+    color: transparent;
+  }
+
+  .check-btn:hover {
+    border-color: var(--green);
+    background: rgba(74,222,128,0.08);
+    transform: scale(1.08);
+  }
+
+  .check-btn.done {
+    background: rgba(74,222,128,0.15);
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 12px rgba(74,222,128,0.2);
+  }
+
+  .total-cell {
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    color: var(--accent);
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 5px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--green));
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .progress-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .log-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+
+  .log-header {
+    padding: 14px 18px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+  }
+
+  .activity-list {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .activity-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .activity-item .act-name { color: var(--blue); font-weight: 800; }
+  .activity-item .act-task { color: var(--text); flex: 1; }
+  .activity-item .act-time { color: var(--muted); font-size: 0.75rem; }
+
+  .admin-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .admin-toggle {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--card2);
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: var(--muted);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .admin-toggle.open { border-bottom-color: var(--border); }
+
+  .admin-body {
+    padding: 16px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .admin-body.open { display: flex; }
+
+  .admin-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .field-group label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .admin-body select,
+  .admin-body input[type="text"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    outline: none;
+  }
+
+  .admin-body select:focus,
+  .admin-body input[type="text"]:focus { border-color: var(--blue); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 20px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(240,192,64,0.3);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2px 0;
+  }
+
+  .rename-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .rename-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .rename-row span {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--muted);
+    width: 90px;
+    flex-shrink: 0;
+  }
+
+  .rename-row input { width: 160px; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚗️ Science Class Tracker</h1>
+  <p>Activity Completion Board</p>
+  <div class="save-indicator" id="save-indicator">✓ Saved</div>
+</header>
+
+<div class="legend">
+  <div class="legend-item">📚 Homework</div>
+  <div class="legend-item">🧪 Simulation / Lab</div>
+  <div class="legend-item">📝 Practice Test</div>
+  <div class="legend-item">🎯 Jeopardy</div>
+  <div class="legend-item">🔬 Virtual Science Teacher</div>
+</div>
+
+<div class="board-wrap">
+  <div class="board-header" id="board-header"></div>
+  <div id="leaderboard-body"></div>
+</div>
+
+<div class="log-section">
+  <div class="log-header">📋 Recent Activity</div>
+  <div class="activity-list" id="activity-log"></div>
+</div>
+
+<div class="admin-panel">
+  <button class="admin-toggle" id="admin-toggle-btn" onclick="toggleAdmin()">
+    <span>⚙️ Teacher Controls</span>
+    <span id="admin-arrow">▼</span>
+  </button>
+  <div class="admin-body" id="admin-body">
+
+    <!-- Add activity -->
+    <div>
+      <div style="font-size:0.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Add Activity Column</div>
+      <div class="admin-row">
+        <div class="field-group">
+          <label>Activity Name</label>
+          <input type="text" id="new-activity-name" placeholder="e.g. PhET Forces Sim" style="width:200px;">
+        </div>
+        <div class="field-group">
+          <label>Type</label>
+          <select id="new-activity-type">
+            <option value="📚">📚 Homework</option>
+            <option value="🧪">🧪 Simulation / Lab</option>
+            <option value="📝">📝 Practice Test</option>
+            <option value="🎯">🎯 Jeopardy</option>
+            <option value="🔬">🔬 Virtual Science Teacher</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="addActivity()">+ Add Column</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Add student -->
+    <div>
+      <div style="font-size:0.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Add Student</div>
+      <div class="admin-row">
+        <div class="field-group">
+          <label>Display Name</label>
+          <input type="text" id="new-student-name" placeholder="e.g. 26-a018" style="width:180px;">
+        </div>
+        <button class="btn-primary" onclick="addStudent()">+ Add Student</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Rename students -->
+    <div>
+      <div style="font-size:0.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Rename Students</div>
+      <div class="rename-list" id="rename-list"></div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Danger zone -->
+    <div class="admin-row">
+      <button class="btn-danger" onclick="resetChecks()">↺ Reset Checkmarks Only</button>
+      <button class="btn-danger" onclick="resetAll()">⚠ Full Reset (clears everything)</button>
+    </div>
+
+  </div>
+</div>
+
+<footer>GED Science · Data saved in this browser · Teacher controls below</footer>
+
+<script>
+  const STORAGE_KEY = 'ged_science_tracker_v1';
+
+  // ── DEFAULT STATE ──────────────────────────────────────
+  const DEFAULT_STATE = {
+    students: [
+      { id: 's1', name: '26-a012' },
+      { id: 's2', name: '26-a015' },
+      { id: 's3', name: '26-a016' },
+      { id: 's4', name: '26-a017' },
+      { id: 's5', name: '25-0004' },
+      { id: 's6', name: '25-0005' },
+    ],
+    activities: [
+      { id: 'a1', name: 'Ectotherm Sim', type: '🧪' },
+      { id: 'a2', name: 'Forces Sim',    type: '🧪' },
+    ],
+    checks: {},
+    log: []
+  };
+
+  // ── LOAD / SAVE ────────────────────────────────────────
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  }
+
+  let state = loadState();
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      flashSaved();
+    } catch(e) {
+      console.warn('localStorage not available:', e);
+    }
+  }
+
+  let saveTimer;
+  function flashSaved() {
+    const el = document.getElementById('save-indicator');
+    el.classList.add('visible');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => el.classList.remove('visible'), 1800);
+  }
+
+  // ── HELPERS ────────────────────────────────────────────
+  function key(sid, aid) { return sid + '_' + aid; }
+  function isChecked(sid, aid) { return !!state.checks[key(sid, aid)]; }
+  function countDone(sid) {
+    return state.activities.filter(a => isChecked(sid, a.id)).length;
+  }
+
+  // ── TOGGLE CHECKMARK ───────────────────────────────────
+  function toggle(sid, aid) {
+    const k = key(sid, aid);
+    const wasChecked = !!state.checks[k];
+    state.checks[k] = !wasChecked;
+
+    if (!wasChecked) {
+      const student  = state.students.find(s => s.id === sid);
+      const activity = state.activities.find(a => a.id === aid);
+      const now = new Date();
+      state.log.unshift({
+        name: student.name,
+        task: activity.name,
+        type: activity.type,
+        time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+      });
+      if (state.log.length > 30) state.log.pop();
+    }
+
+    saveState();
+    render();
+  }
+
+  // ── RENDER ─────────────────────────────────────────────
+  function render() {
+    const totalActs = state.activities.length;
+    const cols = `40px 1fr repeat(${totalActs + 1}, 52px)`;
+
+    // Header
+    const header = document.getElementById('board-header');
+    header.style.gridTemplateColumns = cols;
+    header.innerHTML =
+      `<div>#</div><div>Student</div>` +
+      state.activities.map(a =>
+        `<div class="col-emoji" title="${a.name}">${a.type}<div style="font-size:0.55rem;margin-top:2px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48px">${a.name}</div></div>`
+      ).join('') +
+      `<div class="col-emoji" style="color:var(--accent)">✓<div style="font-size:0.55rem;margin-top:2px">Total</div></div>`;
+
+    // Rows — sorted by completion
+    const sorted = [...state.students].sort((a,b) => countDone(b.id) - countDone(a.id));
+    const body = document.getElementById('leaderboard-body');
+    body.innerHTML = '';
+
+    sorted.forEach((student, idx) => {
+      const rank = idx + 1;
+      const done = countDone(student.id);
+      const pct  = totalActs > 0 ? Math.round((done / totalActs) * 100) : 0;
+      const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+      const rankClass = rank <= 3 ? 'r' + rank : '';
+
+      const row = document.createElement('div');
+      row.className = 'student-row';
+      row.style.gridTemplateColumns = cols;
+
+      let html = `
+        <div class="rank ${rankClass}">${medal}</div>
+        <div>
+          <div class="student-name">${student.name}</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="progress-label">${done}/${totalActs} complete</div>
+        </div>`;
+
+      state.activities.forEach(act => {
+        const checked = isChecked(student.id, act.id);
+        html += `<div class="check-cell">
+          <button class="check-btn ${checked ? 'done' : ''}"
+            onclick="toggle('${student.id}','${act.id}')"
+            title="${student.name} — ${act.name}">
+            ${checked ? '✓' : ''}
+          </button>
+        </div>`;
+      });
+
+      html += `<div class="total-cell">${done}</div>`;
+      row.innerHTML = html;
+      body.appendChild(row);
+    });
+
+    // Log
+    const logEl = document.getElementById('activity-log');
+    if (state.log.length === 0) {
+      logEl.innerHTML = `<div style="color:var(--muted);font-size:0.85rem;padding:8px 4px;font-weight:600;">No activity yet — check off completed work above!</div>`;
+    } else {
+      logEl.innerHTML = state.log.map(e =>
+        `<div class="activity-item">
+          <span>${e.type}</span>
+          <span class="act-name">${e.name}</span>
+          <span class="act-task">completed ${e.task}</span>
+          <span class="act-time">${e.time}</span>
+        </div>`
+      ).join('');
+    }
+
+    // Rename inputs
+    const renameList = document.getElementById('rename-list');
+    if (renameList) {
+      renameList.innerHTML = state.students.map(s =>
+        `<div class="rename-row">
+          <span>${s.id}</span>
+          <input type="text" value="${s.name}"
+            onchange="renameStudent('${s.id}', this.value)"
+            style="width:160px;">
+        </div>`
+      ).join('');
+    }
+  }
+
+  // ── ADMIN ACTIONS ──────────────────────────────────────
+  function toggleAdmin() {
+    const body  = document.getElementById('admin-body');
+    const btn   = document.getElementById('admin-toggle-btn');
+    const arrow = document.getElementById('admin-arrow');
+    const open  = body.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    arrow.textContent = open ? '▲' : '▼';
+  }
+
+  function addActivity() {
+    const name = document.getElementById('new-activity-name').value.trim();
+    const type = document.getElementById('new-activity-type').value;
+    if (!name) return;
+    state.activities.push({ id: 'a' + Date.now(), name, type });
+    document.getElementById('new-activity-name').value = '';
+    saveState();
+    render();
+  }
+
+  function addStudent() {
+    const name = document.getElementById('new-student-name').value.trim();
+    if (!name) return;
+    state.students.push({ id: 's' + Date.now(), name });
+    document.getElementById('new-student-name').value = '';
+    saveState();
+    render();
+  }
+
+  function renameStudent(sid, newName) {
+    const s = state.students.find(s => s.id === sid);
+    if (s && newName.trim()) {
+      s.name = newName.trim();
+      saveState();
+      render();
+    }
+  }
+
+  function resetChecks() {
+    if (confirm('Reset all checkmarks? Student names and activities are kept. This cannot be undone.')) {
+      state.checks = {};
+      state.log    = [];
+      saveState();
+      render();
+    }
+  }
+
+  function resetAll() {
+    if (confirm('⚠ Full reset — this deletes ALL data including students and activities. Are you sure?')) {
+      state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      saveState();
+      render();
+    }
+  }
+
+  // ── INIT ───────────────────────────────────────────────
+  render();
+</script>
+</body>
+</html>
